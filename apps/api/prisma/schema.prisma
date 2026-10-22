@@ -1,0 +1,12 @@
+// Appleway data model. Models arrive with the schema phase; this file currently
+// only establishes the datasource and the generated client location.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
