@@ -1,0 +1,6 @@
+# Mobile-specific ignores; the repository root covers the rest.
+.expo/
+expo-env.d.ts
+.metro-health-check*
+.kotlin/
+*.orig.*
