@@ -1,0 +1,28 @@
+{
+  "name": "appleway",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": "^22.13.0 || ^24.3.0 || >=26.0.0"
+  },
+  "scripts": {
+    "lint": "pnpm -r --no-bail lint",
+    "test": "pnpm -r --no-bail test",
+    "typecheck": "pnpm -r --no-bail typecheck",
+    "build": "pnpm -r build",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "api": "pnpm --filter api",
+    "mobile": "pnpm --filter mobile",
+    "dev:db": "docker compose up -d postgres",
+    "dev:api": "docker compose up api",
+    "dev:stack": "docker compose up --build",
+    "dev:stack:down": "docker compose down"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10",
+    "typescript": "6.0.3"
+  }
+}
