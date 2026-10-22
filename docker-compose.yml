@@ -1,0 +1,46 @@
+# Local test stack: Postgres plus the api, reachable from a phone on the same
+# network. Production lives in infra/docker-compose.prod.yml.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-appleway}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-appleway}
+      POSTGRES_DB: ${POSTGRES_DB:-appleway}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-appleway} -d ${POSTGRES_DB:-appleway}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-appleway}:${POSTGRES_PASSWORD:-appleway}@postgres:5432/${POSTGRES_DB:-appleway}?schema=public
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      DEFAULT_TIMEZONE: ${DEFAULT_TIMEZONE:-Asia/Tashkent}
+    ports:
+      - '${API_PORT:-3000}:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'node -e "fetch(\"http://127.0.0.1:3000/health\").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  pgdata:

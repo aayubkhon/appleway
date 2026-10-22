@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/build
+**/coverage
+**/.expo
+**/.git
+**/.env
+**/.env.*
+!**/.env.example
+apps/mobile
+apps/api/src/generated
+**/*.log
+.DS_Store
