@@ -14,6 +14,12 @@ describe('validateEnv', () => {
     expect(env.DEFAULT_TIMEZONE).toBe('Asia/Tashkent');
     expect(env.ACCESS_TOKEN_TTL_SECONDS).toBe(900);
     expect(env.REFRESH_TOKEN_TTL_DAYS).toBe(30);
+    expect(env.TRUST_PROXY).toBe(0);
+  });
+
+  it('accepts a proxy hop count and rejects a negative one', () => {
+    expect(validateEnv({ ...valid, TRUST_PROXY: '1' }).TRUST_PROXY).toBe(1);
+    expect(() => validateEnv({ ...valid, TRUST_PROXY: '-1' })).toThrow(/TRUST_PROXY/);
   });
 
   it('coerces PORT from a string', () => {

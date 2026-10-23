@@ -34,6 +34,7 @@ services:
       ACCESS_TOKEN_TTL_SECONDS: ${ACCESS_TOKEN_TTL_SECONDS:-900}
       REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
       AUTH_RATE_LIMIT_PER_MINUTE: ${AUTH_RATE_LIMIT_PER_MINUTE:-10}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
     # Apply pending migrations before serving so the schema always matches the code.
     command: ['sh', '-c', '/app/node_modules/.bin/prisma migrate deploy && node dist/main.js']
     ports:
