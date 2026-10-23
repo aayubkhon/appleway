@@ -1,7 +1,10 @@
 import { validateEnv } from './env.js';
 
 describe('validateEnv', () => {
-  const valid = { DATABASE_URL: 'postgresql://user:pass@localhost:5432/db' };
+  const valid = {
+    DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
+    JWT_ACCESS_SECRET: 'x'.repeat(32),
+  };
 
   it('applies defaults for optional values', () => {
     const env = validateEnv(valid);
@@ -9,6 +12,8 @@ describe('validateEnv', () => {
     expect(env.NODE_ENV).toBe('development');
     expect(env.PORT).toBe(3000);
     expect(env.DEFAULT_TIMEZONE).toBe('Asia/Tashkent');
+    expect(env.ACCESS_TOKEN_TTL_SECONDS).toBe(900);
+    expect(env.REFRESH_TOKEN_TTL_DAYS).toBe(30);
   });
 
   it('coerces PORT from a string', () => {
@@ -17,6 +22,13 @@ describe('validateEnv', () => {
 
   it('fails when DATABASE_URL is missing', () => {
     expect(() => validateEnv({})).toThrow(/DATABASE_URL/);
+  });
+
+  it('fails when the access token secret is missing or short', () => {
+    expect(() => validateEnv({ DATABASE_URL: valid.DATABASE_URL })).toThrow(/JWT_ACCESS_SECRET/);
+    expect(() => validateEnv({ ...valid, JWT_ACCESS_SECRET: 'short' })).toThrow(
+      /JWT_ACCESS_SECRET/,
+    );
   });
 
   it('fails on an unknown NODE_ENV', () => {
