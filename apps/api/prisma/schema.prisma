@@ -1,5 +1,6 @@
-// Appleway data model. Models arrive with the schema phase; this file currently
-// only establishes the datasource and the generated client location.
+// Appleway data model. Every business row carries owner_id so each query can be
+// scoped to the signed-in user. Money is stored as BIGINT minor units: a 32-bit
+// integer overflows at roughly 21 million UZS, which is a normal sale size.
 
 generator client {
   provider     = "prisma-client"
@@ -9,4 +10,114 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Currency {
+  USD
+  UZS
+}
+
+/// PAYMENT reduces what is owed. CORRECTION is a negative row that undoes part
+/// of an earlier payment, because payments are never edited or deleted.
+enum PaymentKind {
+  PAYMENT
+  CORRECTION
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  /// E.164 form, e.g. +998901234567. At least one of phone or email is set.
+  phone        String?  @unique
+  /// Stored lower-cased.
+  email        String?  @unique
+  passwordHash String   @map("password_hash")
+  /// IANA zone that decides what "today" means for this user's debts.
+  timezone     String   @default("Asia/Tashkent")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  refreshTokens RefreshToken[]
+  customers     Customer[]
+  debts         Debt[]
+  payments      Payment[]
+
+  @@map("users")
+}
+
+/// One row per issued refresh token. Only the SHA-256 of the token is stored.
+/// Tokens issued from one login share a family; reusing a rotated token
+/// revokes the whole family.
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  familyId  String    @map("family_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+model Customer {
+  id        String   @id @default(uuid()) @db.Uuid
+  ownerId   String   @map("owner_id") @db.Uuid
+  name      String
+  phone     String?
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  owner User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  debts Debt[]
+
+  @@index([ownerId, name])
+  @@map("customers")
+}
+
+/// A sale on credit. Status is never stored: it is computed from the amount,
+/// the payments and the due date in the owner's timezone.
+model Debt {
+  id          String   @id @default(uuid()) @db.Uuid
+  ownerId     String   @map("owner_id") @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  amountMinor BigInt   @map("amount_minor")
+  currency    Currency @default(USD)
+  description String?
+  /// Calendar dates, not instants: "due on the 5th" must not shift with zones.
+  issuedOn    DateTime @map("issued_on") @db.Date
+  dueOn       DateTime @map("due_on") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  customer Customer  @relation(fields: [customerId], references: [id], onDelete: NoAction)
+  payments Payment[]
+
+  @@index([ownerId, dueOn])
+  @@index([ownerId, customerId])
+  @@map("debts")
+}
+
+/// Append-only: no updated_at, and the api exposes no update or delete.
+model Payment {
+  id          String      @id @default(uuid()) @db.Uuid
+  ownerId     String      @map("owner_id") @db.Uuid
+  debtId      String      @map("debt_id") @db.Uuid
+  kind        PaymentKind @default(PAYMENT)
+  /// Positive for PAYMENT, negative for CORRECTION (enforced by a CHECK).
+  amountMinor BigInt      @map("amount_minor")
+  paidOn      DateTime    @map("paid_on") @db.Date
+  note        String?
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  debt  Debt @relation(fields: [debtId], references: [id], onDelete: NoAction)
+
+  @@index([ownerId, debtId])
+  @@map("payments")
 }
