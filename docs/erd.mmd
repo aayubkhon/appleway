@@ -1,0 +1,63 @@
+%% Appleway data model. Source of truth is apps/api/prisma/schema.prisma;
+%% update this diagram in the same change as the schema.
+erDiagram
+    users ||--o{ refresh_tokens : "signs in with"
+    users ||--o{ customers : owns
+    users ||--o{ debts : owns
+    users ||--o{ payments : owns
+    customers ||--o{ debts : "buys on credit"
+    debts ||--o{ payments : "is paid by"
+
+    users {
+        uuid id PK
+        text phone UK "E.164, nullable"
+        text email UK "lower-case, nullable"
+        text password_hash "argon2id"
+        text timezone "default Asia/Tashkent"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    refresh_tokens {
+        uuid id PK
+        uuid user_id FK
+        uuid family_id "one per login"
+        text token_hash UK "sha256"
+        timestamptz expires_at
+        timestamptz revoked_at "nullable"
+        timestamptz created_at
+    }
+
+    customers {
+        uuid id PK
+        uuid owner_id FK
+        text name
+        text phone "nullable"
+        text note "nullable"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    debts {
+        uuid id PK
+        uuid owner_id FK
+        uuid customer_id FK
+        bigint amount_minor "> 0"
+        enum currency "USD | UZS"
+        text description "nullable"
+        date issued_on
+        date due_on ">= issued_on"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    payments {
+        uuid id PK
+        uuid owner_id FK
+        uuid debt_id FK
+        enum kind "PAYMENT > 0 | CORRECTION < 0"
+        bigint amount_minor
+        date paid_on
+        text note "nullable"
+        timestamptz created_at "append-only"
+    }

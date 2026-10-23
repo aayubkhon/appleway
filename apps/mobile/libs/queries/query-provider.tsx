@@ -3,6 +3,7 @@ import * as Network from 'expo-network';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
+import { getAuthStatus, subscribeAuthStatus } from '../services/session';
 import { createQueryClient } from './query-client';
 
 /**
@@ -33,6 +34,18 @@ export function QueryProvider({ children }: QueryProviderProps): ReactNode {
 
     return () => subscription.remove();
   }, []);
+
+  // A session can also end without the user asking (refresh token revoked).
+  // Cached data belongs to that account, so it goes with it.
+  useEffect(
+    () =>
+      subscribeAuthStatus(() => {
+        if (getAuthStatus() === 'signedOut') {
+          queryClient.clear();
+        }
+      }),
+    [queryClient],
+  );
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

@@ -12,6 +12,16 @@ export const envSchema = z.object({
   CORS_ORIGINS: z.string().default('*'),
   /** IANA timezone used when the api has to decide what "today" means. */
   DEFAULT_TIMEZONE: z.string().default('Asia/Tashkent'),
+  /** HMAC key for access tokens. Long and random; rotating it signs everyone out. */
+  JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
+  ACCESS_TOKEN_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15 * 60),
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
+  /** Requests per minute per client IP on register, login and refresh. */
+  AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(10),
 });
 
 export type Env = z.infer<typeof envSchema>;

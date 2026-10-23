@@ -24,3 +24,11 @@ export const typography = {
 
 /** Smallest comfortable touch target, in points. */
 export const minTouchTarget = 44;
+
+/** Extra touch area around small controls, so they still meet minTouchTarget. */
+export const hitSlop = {
+  top: spacing.sm,
+  bottom: spacing.sm,
+  left: spacing.sm,
+  right: spacing.sm,
+} as const;

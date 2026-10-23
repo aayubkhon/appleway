@@ -30,6 +30,12 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-appleway}:${POSTGRES_PASSWORD:-appleway}@postgres:5432/${POSTGRES_DB:-appleway}?schema=public
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
       DEFAULT_TIMEZONE: ${DEFAULT_TIMEZONE:-Asia/Tashkent}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET in .env}
+      ACCESS_TOKEN_TTL_SECONDS: ${ACCESS_TOKEN_TTL_SECONDS:-900}
+      REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
+      AUTH_RATE_LIMIT_PER_MINUTE: ${AUTH_RATE_LIMIT_PER_MINUTE:-10}
+    # Apply pending migrations before serving so the schema always matches the code.
+    command: ['sh', '-c', '/app/node_modules/.bin/prisma migrate deploy && node dist/main.js']
     ports:
       - '${API_PORT:-3000}:3000'
     depends_on:

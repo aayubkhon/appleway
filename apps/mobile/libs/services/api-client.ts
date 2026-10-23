@@ -19,21 +19,36 @@ export class NetworkError extends Error {
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
+/** Every versioned endpoint lives under this prefix; /health does not. */
+export const API_PREFIX = '/api/v1';
+
+export interface ApiRequestInit extends Omit<RequestInit, 'body'> {
+  /** Sent as JSON. */
+  json?: unknown;
+}
+
 /**
  * The single place network requests leave the app. Callers receive parsed JSON
  * and typed errors; response shapes are validated by the calling service.
  */
-export async function apiRequest(path: string, init: RequestInit = {}): Promise<unknown> {
+export async function apiRequest(path: string, init: ApiRequestInit = {}): Promise<unknown> {
+  const { json, headers, ...rest } = init;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
     const response = await fetch(`${env.apiUrl}${path}`, {
-      ...init,
+      ...rest,
       signal: controller.signal,
-      headers: { Accept: 'application/json', ...init.headers },
+      headers: {
+        Accept: 'application/json',
+        ...(json === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...headers,
+      },
+      body: json === undefined ? undefined : JSON.stringify(json),
     });
 
+    // 204 and error pages have no JSON body; callers that need one validate it.
     const body: unknown = await response.json().catch(() => null);
 
     if (!response.ok) {
