@@ -187,3 +187,51 @@ export const ledgerSummarySchema = z.object({
 });
 
 export type LedgerSummary = z.infer<typeof ledgerSummarySchema>;
+
+// --- data export -----------------------------------------------------------
+
+/** Raw rows, not computed views: the export is the user's own copy of the data. */
+export const accountExportSchema = z.object({
+  exportedAt: z.iso.datetime(),
+  user: z.object({
+    id: z.uuid(),
+    phone: z.string().nullable(),
+    email: z.string().nullable(),
+    timezone: z.string(),
+    createdAt: z.iso.datetime(),
+  }),
+  customers: z.array(
+    z.object({
+      id: z.uuid(),
+      name: z.string(),
+      phone: z.string().nullable(),
+      note: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+    }),
+  ),
+  debts: z.array(
+    z.object({
+      id: z.uuid(),
+      customerId: z.uuid(),
+      amountMinor: z.number().int(),
+      currency: currencySchema,
+      description: z.string().nullable(),
+      issuedOn: isoDateSchema,
+      dueOn: isoDateSchema,
+      createdAt: z.iso.datetime(),
+    }),
+  ),
+  payments: z.array(
+    z.object({
+      id: z.uuid(),
+      debtId: z.uuid(),
+      kind: paymentKindSchema,
+      amountMinor: z.number().int(),
+      paidOn: isoDateSchema,
+      note: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+    }),
+  ),
+});
+
+export type AccountExport = z.infer<typeof accountExportSchema>;

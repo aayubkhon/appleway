@@ -100,3 +100,10 @@ export const authSessionSchema = z.object({
 });
 
 export type AuthSession = z.infer<typeof authSessionSchema>;
+
+/** Deleting the account is irreversible, so the password is asked again. */
+export const deleteAccountRequestSchema = z.object({
+  password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
+});
+
+export type DeleteAccountRequest = z.infer<typeof deleteAccountRequestSchema>;
