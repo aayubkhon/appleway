@@ -22,6 +22,12 @@ export const envSchema = z.object({
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
   /** Requests per minute per client IP on register, login and refresh. */
   AUTH_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(10),
+  /**
+   * How many reverse proxies (Caddy) sit in front of the api. 0 trusts none,
+   * so X-Forwarded-For cannot be spoofed to dodge the rate limit; behind
+   * exactly one proxy set 1 so the limit counts real client addresses.
+   */
+  TRUST_PROXY: z.coerce.number().int().nonnegative().default(0),
 });
 
 export type Env = z.infer<typeof envSchema>;
