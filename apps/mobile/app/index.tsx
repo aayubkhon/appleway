@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 
-import { ConnectionScreen } from '../libs/screens/connection/connection-screen';
+import { HomeScreen } from '../libs/screens/home/home-screen';
 
 export default function Index(): ReactElement {
-  return <ConnectionScreen />;
+  return <HomeScreen />;
 }
